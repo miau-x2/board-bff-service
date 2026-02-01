@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: bff-service
+
+  profiles:
+    active: dev
+
+  config:
+    import: optional:configserver:http://admin:admin12345@localhost:8890
