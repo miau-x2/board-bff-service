@@ -1,0 +1,57 @@
+﻿.login-card {
+    border-radius: 1rem;
+}
+
+.field-feedback {
+    min-height: 1.25rem;
+    margin-top: 0.35rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+
+.field-feedback.is-invalid {
+    color: var(--bs-danger);
+}
+
+.field-feedback.is-valid {
+    color: var(--bs-success);
+}
+
+.form-control.is-valid {
+    border-color: var(--bs-success);
+}
+
+.form-control.is-invalid {
+    border-color: var(--bs-danger);
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--bs-secondary);
+    line-height: 1;
+    user-select: none;
+}
+
+.password-toggle i {
+    font-size: 1.1rem;
+}
+
+.password-toggle:hover {
+    color: var(--bs-body-color);
+}
+
+.form-control.is-valid,
+.form-control.is-invalid {
+    background-image: none !important;
+    padding-right: 0.75rem !important;
+}
+
+#password.form-control.is-valid,
+#password.form-control.is-invalid,
+#password.form-control.pe-5 {
+    padding-right: 3rem !important;
+}
