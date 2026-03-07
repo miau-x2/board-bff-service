@@ -14,12 +14,12 @@ document.addEventListener("DOMContentLoaded", function () {
     loginLinks.forEach((loginLink) => {
         const basePath = loginLink.dataset.loginPath || "/login";
         const loginUrl = new URL(basePath, window.location.origin);
-        loginUrl.searchParams.set("returnTo", currentUrl);
+        loginUrl.searchParams.set("redirect", currentUrl);
         loginLink.setAttribute("href", loginUrl.toString());
     });
 
-    const returnToInputs = document.querySelectorAll(".js-return-to-input");
-    returnToInputs.forEach((input) => {
+    const returnUrlInputs = document.querySelectorAll(".js-return-to-input");
+    returnUrlInputs.forEach((input) => {
         input.value = currentUrl;
     });
 });
