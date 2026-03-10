@@ -3,6 +3,7 @@ package com.example.board.bff.config;
 import com.example.board.bff.security.filter.CustomAuthenticationFilter;
 import com.example.board.bff.security.filter.SessionValidationFilter;
 import com.example.board.bff.security.handler.CustomAuthenticationFailureHandler;
+import com.example.board.bff.security.handler.CustomLogoutHandler;
 import com.example.board.bff.security.handler.SafeRedirectAuthenticationSuccessHandler;
 import com.example.board.bff.security.provider.CustomAuthenticationProvider;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,7 @@ public class SecurityConfig {
             CustomAuthenticationProvider authenticationProvider,
             SessionValidationFilter sessionValidationFilter,
             CustomAuthenticationFilter authenticationFilter,
+            CustomLogoutHandler logoutHandler,
             SessionRegistry sessionRegistry,
             SecurityContextRepository securityContextRepository) {
 
@@ -62,6 +64,7 @@ public class SecurityConfig {
         );
         http.logout(logout -> logout
                 .logoutUrl("/logout")
+                .addLogoutHandler(logoutHandler)
                 .logoutSuccessUrl("/")
                 .permitAll()
         );
