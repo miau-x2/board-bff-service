@@ -31,4 +31,7 @@ public interface AuthApiClient {
 
     @PostMapping("/auth/token/reissue")
     ApiResponse<ReissueResponse> reissue(@RequestBody ReissueRequest request);
+
+    @PostMapping("/auth/logout")
+    ApiResponse<Void> logout(@RequestBody LogoutRequest request);
 }
