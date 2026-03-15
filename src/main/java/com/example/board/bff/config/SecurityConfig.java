@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -33,6 +34,7 @@ public class SecurityConfig {
             CustomAuthenticationProvider authenticationProvider,
             SessionValidationFilter sessionValidationFilter,
             CustomAuthenticationFilter authenticationFilter,
+            AuthenticationEntryPoint authenticationEntryPoint,
             CustomLogoutHandler logoutHandler,
             SessionRegistry sessionRegistry,
             SecurityContextRepository securityContextRepository) {
@@ -41,26 +43,29 @@ public class SecurityConfig {
         http.httpBasic(AbstractHttpConfigurer::disable);
         http.formLogin(AbstractHttpConfigurer::disable);
         http.authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/",
-                                "/error",
-                                "/login",
-                                "/login/**",
-                                "/signup",
-                                "/signup/**",
-                                "/favicon.ico",
-                                "/assets/**",
-                                "/hello"
+                .requestMatchers(
+                        "/",
+                        "/error",
+                        "/error/**",
+                        "/login",
+                        "/login/**",
+                        "/signup",
+                        "/signup/**",
+                        "/favicon.ico",
+                        "/assets/**",
+                        "/hello"
                         ).permitAll()
-                        .anyRequest()
-                        .authenticated()
+                .requestMatchers("/admin/**")
+                .hasRole("ADMIN")
+                .anyRequest()
+                .authenticated()
         );
         http.authenticationProvider(authenticationProvider);
         http.addFilterBefore(sessionValidationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAt(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-                .accessDeniedHandler(((request, response, accessDeniedException) -> response.sendRedirect("/error/403")))
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(((request, response, accessDeniedException) -> response.sendError(403)))
         );
         http.logout(logout -> logout
                 .logoutUrl("/logout")
@@ -97,6 +102,11 @@ public class SecurityConfig {
         customFilter.setAuthenticationFailureHandler(failureHandler);
 
         return customFilter;
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return new LoginUrlAuthenticationEntryPoint("/login");
     }
 
     @Bean

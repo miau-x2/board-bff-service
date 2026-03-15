@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const links = document.querySelectorAll(".category-link");
+    const links = document.querySelectorAll(".category-root-link");
     links.forEach((link) => {
-        link.addEventListener("click", function (event) {
-            event.preventDefault();
+        link.addEventListener("click", function () {
             links.forEach((item) => item.classList.remove("active", "fw-bold"));
             link.classList.add("active", "fw-bold");
         });

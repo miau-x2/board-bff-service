@@ -36,39 +36,65 @@ public class TokenService {
         this.retryTemplate = retryTemplate;
     }
 
-    public GetAccessTokenResult getValidAccessToken(String sessionId, SessionRecord record) {
-        if (record == null
-                || record.memberId() == null
-                || record.tokenType() == null
-                || record.sessionExpiresAt() == null) {
-            return new GetAccessTokenResult.SessionInvalid();
-        }
-        if (Instant.now().isAfter(record.sessionExpiresAt())) {
-            return new GetAccessTokenResult.SessionExpired();
-        }
-        if (record.refreshToken() == null || record.refreshToken().isBlank() || record.refreshTokenExpiresAt() == null) {
-            return new GetAccessTokenResult.SessionInvalid();
-        }
-        if (Instant.now().isAfter(record.refreshTokenExpiresAt())) {
-            return new GetAccessTokenResult.RefreshTokenExpired();
+    public GetAccessTokenResult getValidAccessToken(String sessionId, SessionRecord sessionRecord) {
+        var invalid = validateForReissue(sessionRecord);
+        if(invalid != null) {
+            return invalid;
         }
 
         // 액세스 토큰이 유효한 경우
-        if (record.accessToken() != null
-                && !record.accessToken().isBlank()
-                && record.accessTokenExpiresAt() != null
-                && Instant.now().plus(ACCESS_TOKEN_EXPIRY_BUFFER).isBefore(record.accessTokenExpiresAt())) {
+        if (sessionRecord.accessToken() != null
+                && !sessionRecord.accessToken().isBlank()
+                && sessionRecord.accessTokenExpiresAt() != null
+                && Instant.now().plus(ACCESS_TOKEN_EXPIRY_BUFFER).isBefore(sessionRecord.accessTokenExpiresAt())) {
             return new GetAccessTokenResult.Success(new TokenRecord(
-                    record.accessToken(),
-                    record.accessTokenExpiresAt(),
-                    record.refreshToken(),
-                    record.refreshTokenExpiresAt(),
-                    record.tokenType()
+                    sessionRecord.accessToken(),
+                    sessionRecord.accessTokenExpiresAt(),
+                    sessionRecord.refreshToken(),
+                    sessionRecord.refreshTokenExpiresAt(),
+                    sessionRecord.tokenType()
             ));
         }
 
         // 액세스 토큰이 만료 되었거나 유효하지 않은 경우 재발급
-        return singleFlight.run(sessionId, () -> reissueWithRetry(record.memberId(), record.refreshToken()));
+        return singleFlight.run(sessionId, () -> reissueWithRetry(sessionRecord.memberId(), sessionRecord.refreshToken()));
+    }
+
+    public GetAccessTokenResult reissueAccessToken(String sessionId, SessionRecord sessionRecord) {
+        var invalid = validateForReissue(sessionRecord);
+        if(invalid != null) {
+            return invalid;
+        }
+        return singleFlight.run(sessionId, () -> reissueWithRetry(sessionRecord.memberId(), sessionRecord.refreshToken()));
+    }
+
+    private boolean isInvalidSession(SessionRecord sessionRecord) {
+        return sessionRecord == null
+                || sessionRecord.memberId() == null
+                || sessionRecord.tokenType() == null
+                || sessionRecord.sessionExpiresAt() == null;
+    }
+
+    private boolean isInvalidRefresh(SessionRecord sessionRecord) {
+        return sessionRecord.refreshToken() == null
+                || sessionRecord.refreshToken().isBlank()
+                || sessionRecord.refreshTokenExpiresAt() == null;
+    }
+
+    private GetAccessTokenResult validateForReissue(SessionRecord sessionRecord) {
+        if (isInvalidSession(sessionRecord)) {
+            return new GetAccessTokenResult.SessionInvalid();
+        }
+        if (Instant.now().isAfter(sessionRecord.sessionExpiresAt())) {
+            return new GetAccessTokenResult.SessionExpired();
+        }
+        if (isInvalidRefresh(sessionRecord)) {
+            return new GetAccessTokenResult.SessionInvalid();
+        }
+        if (Instant.now().isAfter(sessionRecord.refreshTokenExpiresAt())) {
+            return new GetAccessTokenResult.RefreshTokenExpired();
+        }
+        return null;
     }
 
     private GetAccessTokenResult reissueWithRetry(Long memberId, String refreshToken) {

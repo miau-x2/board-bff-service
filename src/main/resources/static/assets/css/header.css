@@ -1,0 +1,46 @@
+.logo {
+    color: #111;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.category-nav {
+    gap: 1.2rem;
+}
+
+.category-link {
+    padding: 0.8rem 0;
+}
+
+.category-link.active,
+.category-link:hover {
+    color: #fff !important;
+}
+
+.category-nav .nav-item.dropdown {
+    position: relative;
+}
+
+.category-nav .category-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1050;
+    min-width: 12rem;
+    margin-top: 0;
+    border-radius: 0;
+}
+
+.category-nav .nav-item.dropdown:hover > .category-dropdown {
+    display: block;
+}
+
+.category-nav .category-root-link {
+    white-space: nowrap;
+}
+
+.category-nav .dropdown-toggle::after {
+    display: none;
+}
