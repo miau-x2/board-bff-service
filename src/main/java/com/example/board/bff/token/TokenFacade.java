@@ -3,6 +3,8 @@ package com.example.board.bff.token;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.function.BiFunction;
+
 @Component
 @RequiredArgsConstructor
 public class TokenFacade {
@@ -10,18 +12,37 @@ public class TokenFacade {
     private final TokenService tokenService;
 
     public GetAuthorizationResult getAuthorization(String sessionId) {
+        return resolveAuthorization(sessionId, tokenService::getValidAccessToken);
+    }
+
+    public GetAuthorizationResult reissueAuthorization(String sessionId) {
+        return resolveAuthorization(sessionId, tokenService::reissueAccessToken);
+    }
+
+    private GetAuthorizationResult resolveAuthorization(
+            String sessionId,
+            BiFunction<String, SessionRecord, GetAccessTokenResult> tokenResolver) {
         var sessionRecord = tokenContextRepository.findById(sessionId);
-        if(sessionRecord.isEmpty()) {
+        if (sessionRecord.isEmpty()) {
             return new GetAuthorizationResult.Unauthorized();
         }
-        var accessTokenResult = tokenService.getValidAccessToken(sessionId, sessionRecord.get());
-        return switch (accessTokenResult) {
+
+        var accessTokenResult = tokenResolver.apply(sessionId, sessionRecord.get());
+        return mapAuthorizationResult(sessionId, accessTokenResult);
+    }
+
+    private GetAuthorizationResult mapAuthorizationResult(String sessionId, GetAccessTokenResult result) {
+        return switch (result) {
             case GetAccessTokenResult.Success(var tokenRecord) -> {
-                var isSave = tokenContextRepository.save(sessionId, tokenRecord);
-                if(isSave) {
-                    yield new GetAuthorizationResult.Success(tokenRecord.tokenType() + " " + tokenRecord.accessToken());
-                }
-                yield new GetAuthorizationResult.Unauthorized();
+                var saveResult = tokenContextRepository.save(sessionId, tokenRecord);
+                yield switch (saveResult) {
+                    case SaveAccessTokenResult.Success _ ->
+                            new GetAuthorizationResult.Success(tokenRecord.tokenType() + " " + tokenRecord.accessToken());
+                    case SaveAccessTokenResult.SessionInvalid _, SaveAccessTokenResult.SessionExpired _ ->
+                            new GetAuthorizationResult.Unauthorized();
+                    case SaveAccessTokenResult.SystemError _ ->
+                            new GetAuthorizationResult.SystemError();
+                };
             }
             case GetAccessTokenResult.SessionInvalid _,
                  GetAccessTokenResult.SessionExpired _,
